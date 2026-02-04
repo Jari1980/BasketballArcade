@@ -66,6 +66,19 @@ const player = {
 player.sprite.src = '/player.png' // vertical 2-frame sprite sheet
 
 // --------------------
+// Basket images
+// --------------------
+const basketNormal = new Image()
+basketNormal.src = '/basket.png'
+
+const basketGoal = new Image()
+basketGoal.src = '/basket_goal.png'
+
+let basketFlashFrames = 0 // frames to show goal sprite
+
+const basket = { x: 450, y: 170, w: 64, h: 64 } 
+
+// --------------------
 // Ball
 // --------------------
 const ball = {
@@ -81,6 +94,7 @@ const ball = {
 // Hoop
 // --------------------
 const hoop = { x: 450, y: 200, w: 60, h: 10, rimRadius: 6 }
+
 
 // Physics
 const gravity = 0.25
@@ -212,6 +226,7 @@ function checkScore() {
   ) {
     score.value++
     perfectShot.value = true
+    basketFlashFrames = 10
     showAnnouncement('✨ Perfect Shot! ✨')
     setTimeout(() => (perfectShot.value = false), 1000)
     resetBall()
@@ -224,6 +239,7 @@ function checkScore() {
     ball.y < hoop.y + hoop.h
   ) {
     score.value++
+    basketFlashFrames = 10
     showAnnouncement('Score!')
     resetBall()
   }
@@ -266,12 +282,15 @@ function loop() {
   ctx.fillRect(0, 330, 600, 70)
 
   // Hoop
-  ctx.fillStyle = '#e74c3c'
-  ctx.fillRect(hoop.x, hoop.y, hoop.w, hoop.h)
-  ctx.beginPath()
-  ctx.arc(hoop.x, hoop.y, hoop.rimRadius, 0, Math.PI * 2)
-  ctx.arc(hoop.x + hoop.w, hoop.y, hoop.rimRadius, 0, Math.PI * 2)
-  ctx.fill()
+  //ctx.fillStyle = '#e74c3c'
+  //ctx.fillRect(hoop.x, hoop.y, hoop.w, hoop.h)
+  //ctx.beginPath()
+  //ctx.arc(hoop.x, hoop.y, hoop.rimRadius, 0, Math.PI * 2)
+  //ctx.arc(hoop.x + hoop.w, hoop.y, hoop.rimRadius, 0, Math.PI * 2)
+  //ctx.fill()
+  const currentBasket = basketFlashFrames > 0 ? basketGoal : basketNormal
+  ctx.drawImage(currentBasket, hoop.x - 2, hoop.y - 32, 64, 64) // adjust position
+  if (basketFlashFrames > 0) basketFlashFrames--
 
   // Player sprite
   const frameY = player.shootingFrame > 0 ? player.frameHeight : 0

@@ -5,4 +5,5 @@ export const ball = {
   vx: 0,
   vy: 0,
   shooting: false,
+  justScored: false, // prevents double ball drawing after score
 }

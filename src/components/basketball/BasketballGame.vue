@@ -97,6 +97,7 @@ function resetBall() {
   ball.vx = 0
   ball.vy = 0
   ball.shooting = false
+  ball.justScored = false   // reset flag
   player.shootingFrame = 0
 }
 

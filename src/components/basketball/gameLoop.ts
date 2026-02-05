@@ -1,41 +1,36 @@
 import { ball } from './entities/ball'
 import { player } from './entities/player'
-import { hoop } from './entities/hoop'
+import { basket } from './entities/basket'
+import { platform } from './entities/platform'
 import { gravity, rimCollision } from './physics'
 import { score, perfectShot, shotsLeft, showAnnouncement } from './state'
-
-// Basket images
-const basketNormal = new Image()
-basketNormal.src = '/basket.png'
-
-const basketGoal = new Image()
-basketGoal.src = '/basket_goal.png'
-
-// Flash counter for goal
-let basketFlashFrames = 0
 
 export function startGameLoop(
   ctx: CanvasRenderingContext2D,
   resetBall: () => void,
   isDraggingGetter?: () => boolean,
-  dragCurrentGetter?: () => { x: number; y: number }
+  dragCurrentGetter?: () => { x: number; y: number },
 ) {
   function loop() {
     // --- Background ---
     ctx.fillStyle = '#2c2c2c'
     ctx.fillRect(0, 0, 600, 400)
 
+    // Draw the platform (pixel art)
+    ctx.imageSmoothingEnabled = false // keep crisp pixels
+    ctx.drawImage(platform.img, platform.x, platform.y, platform.w, platform.h)
+
     // --- Floor ---
     ctx.fillStyle = '#3a3a3a'
     ctx.fillRect(0, 330, 600, 70)
 
     // --- Basket ---
-    const currentBasket = basketFlashFrames > 0 ? basketGoal : basketNormal
-    ctx.drawImage(currentBasket, hoop.x - 2, hoop.y - 32, 64, 64)
-    if (basketFlashFrames > 0) basketFlashFrames--
+    const currentBasket = basket.flashFrames > 0 ? basket.imgGoal : basket.imgNormal
+    ctx.drawImage(currentBasket, basket.x, basket.y, basket.w, basket.h)
+    if (basket.flashFrames > 0) basket.flashFrames--
 
     // --- Player ---
-    const frameY = player.shootingFrame > 0 ? player.frameHeight : 0
+    const frameY = ball.shooting ? player.frameHeight : 0
     ctx.drawImage(
       player.sprite,
       0,
@@ -45,7 +40,7 @@ export function startGameLoop(
       player.x,
       player.y,
       player.w,
-      player.h
+      player.h,
     )
 
     // Shooting animation increment
@@ -67,12 +62,12 @@ export function startGameLoop(
       ball.y += ball.vy
 
       // Rim collision (both sides)
-      rimCollision(hoop.x)
-      rimCollision(hoop.x + hoop.w)
+      rimCollision(basket.x + 5)
+      rimCollision(basket.x + basket.w - 5)
 
       // Score detection
       checkScore(resetBall)
-    } else {
+    } else if (!ball.shooting && !ball.justScored){
       // Reset ball on player
       ball.x = player.x + player.w
       ball.y = player.y + 10
@@ -95,37 +90,55 @@ export function startGameLoop(
   loop()
 }
 
+const perfectRimMargin = 10 // perfect swish is the center 10px in from edges
+const normalRimMargin = 2 // normal score includes almost entire rim width
+
 // --- Score check ---
 function checkScore(resetBall: () => void) {
-  // Perfect swish
+  const perfectRimMargin = 10 // center area for perfect swish
+  const normalRimMargin = 2 // slightly larger area for normal score
+  const rimTop = basket.y
+  const rimBottom = basket.y + basket.rimHeight
+  // Perfect swish (inner rectangle)
   if (
-    ball.x > hoop.x + 10 &&
-    ball.x < hoop.x + hoop.w - 10 &&
-    ball.y > hoop.y &&
-    ball.y < hoop.y + hoop.h
+    ball.x > basket.x + perfectRimMargin &&
+    ball.x < basket.x + basket.w - perfectRimMargin &&
+    ball.y > rimTop &&
+    ball.y < rimBottom
   ) {
     score.value++
     perfectShot.value = true
-    basketFlashFrames = 10
+    basket.flashFrames = 40
+    ball.justScored = true
     showAnnouncement('✨ Perfect Shot! ✨')
     setTimeout(() => (perfectShot.value = false), 1000)
-    resetBall()
+    setTimeout(() => {
+      perfectShot.value = false
+      resetBall()
+      ball.justScored = false
+    }, 400)
   }
   // Normal score
   else if (
-    ball.x > hoop.x &&
-    ball.x < hoop.x + hoop.w &&
-    ball.y > hoop.y &&
-    ball.y < hoop.y + hoop.h
+    ball.x > basket.x + normalRimMargin &&
+    ball.x < basket.x + basket.w - normalRimMargin &&
+    ball.y > rimTop &&
+    ball.y < rimBottom
   ) {
     score.value++
-    basketFlashFrames = 10
+    basket.flashFrames = 40
+    ball.justScored = true
     showAnnouncement('Score!')
-    resetBall()
+    setTimeout(() => {
+      resetBall()
+      ball.justScored = false
+    }, 400)
   }
   // Missed
-  else if (ball.y > 400 || ball.x < 0 || ball.x > 600) {
+  else if (!ball.justScored && (ball.y > 400 || ball.x < 0 || ball.x > 600)) {
     showAnnouncement('Miss!')
-    resetBall()
+    setTimeout(() => {
+      resetBall()
+    }, 200)
   }
 }

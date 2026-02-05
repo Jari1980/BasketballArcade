@@ -1,5 +1,5 @@
 import { ball } from './entities/ball'
-import { hoop } from './entities/hoop'
+import { basket } from './entities/basket'
 import { score, perfectShot } from './state'
 import { showAnnouncement } from './state'
 
@@ -7,10 +7,10 @@ export let basketFlashFrames = 0
 
 export function checkScore(resetBall: () => void) {
   if (
-    ball.x > hoop.x + 10 &&
-    ball.x < hoop.x + hoop.w - 10 &&
-    ball.y > hoop.y &&
-    ball.y < hoop.y + hoop.h
+    ball.x > basket.x + 10 &&
+    ball.x < basket.x + basket.w - 10 &&
+    ball.y > basket.y &&
+    ball.y < basket.y + basket.h
   ) {
     score.value++
     perfectShot.value = true
@@ -19,10 +19,10 @@ export function checkScore(resetBall: () => void) {
     setTimeout(() => (perfectShot.value = false), 1000)
     resetBall()
   } else if (
-    ball.x > hoop.x &&
-    ball.x < hoop.x + hoop.w &&
-    ball.y > hoop.y &&
-    ball.y < hoop.y + hoop.h
+    ball.x > basket.x &&
+    ball.x < basket.x + basket.w &&
+    ball.y > basket.y &&
+    ball.y < basket.y + basket.h
   ) {
     score.value++
     basketFlashFrames = 10

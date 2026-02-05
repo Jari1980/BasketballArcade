@@ -1,6 +1,7 @@
 import { ball } from './entities/ball'
 import { player } from './entities/player'
 import { basket } from './entities/basket'
+import { crowd } from './entities/crowd'
 import { platform } from './entities/platform'
 import { gravity, rimCollision } from './physics'
 import { score, perfectShot, shotsLeft, showAnnouncement } from './state'
@@ -15,6 +16,42 @@ export function startGameLoop(
     // --- Background ---
     ctx.fillStyle = '#2c2c2c'
     ctx.fillRect(0, 0, 600, 400)
+
+    // --- Crowd cheer timer ---
+    if (crowd.cheerFrames > 0) {
+      crowd.cheerFrames--
+      //if (crowd.cheerFrames === 0) {
+      // crowd.cheering = false
+      //}
+    }
+    crowd.cheering = crowd.cheerFrames > 0
+    // --- Crowd (behind platform) ---
+    ctx.imageSmoothingEnabled = false
+
+    // idle / cheer bobbing
+    crowd.bobOffset += crowd.bobSpeed
+    const bobMultiplier = crowd.cheering ? 2 : 1
+    const bobY = Math.sin(crowd.bobOffset) * crowd.bobAmount * bobMultiplier
+
+    const crowdImg = crowd.cheering ? crowd.imgCheer : crowd.imgIdle
+
+    // Draw crowd across platform width
+    for (let x = platform.x; x < platform.x + platform.w; x += crowd.w) {
+      const remaining = platform.x + platform.w - x
+      const dw = Math.min(crowd.w, remaining) // destination width
+
+      ctx.drawImage(
+        crowdImg,
+        0,
+        0, // sx, sy
+        crowd.w,
+        crowd.h, // full source width/height
+        x,
+        crowd.y + bobY, // dx, dy
+        dw,
+        crowd.h, // destination width/height
+      )
+    }
 
     // Draw the platform (pixel art)
     ctx.imageSmoothingEnabled = false // keep crisp pixels
@@ -67,7 +104,7 @@ export function startGameLoop(
 
       // Score detection
       checkScore(resetBall)
-    } else if (!ball.shooting && !ball.justScored){
+    } else if (!ball.shooting && !ball.justScored) {
       // Reset ball on player
       ball.x = player.x + player.w
       ball.y = player.y + 10
@@ -95,6 +132,8 @@ const normalRimMargin = 2 // normal score includes almost entire rim width
 
 // --- Score check ---
 function checkScore(resetBall: () => void) {
+  // ✅ already handled this shot
+  if (ball.justScored) return
   const perfectRimMargin = 10 // center area for perfect swish
   const normalRimMargin = 2 // slightly larger area for normal score
   const rimTop = basket.y
@@ -109,6 +148,7 @@ function checkScore(resetBall: () => void) {
     score.value++
     perfectShot.value = true
     basket.flashFrames = 40
+    crowd.cheerFrames = 60
     ball.justScored = true
     showAnnouncement('✨ Perfect Shot! ✨')
     setTimeout(() => (perfectShot.value = false), 1000)
@@ -127,6 +167,7 @@ function checkScore(resetBall: () => void) {
   ) {
     score.value++
     basket.flashFrames = 40
+    crowd.cheerFrames = 60
     ball.justScored = true
     showAnnouncement('Score!')
     setTimeout(() => {

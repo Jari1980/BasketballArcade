@@ -5,5 +5,5 @@
 </template>
 
 <script setup>
-import BasketballGame from "./components/BasketballGame.vue";
+import BasketballGame from '@/components/basketball/BasketballGame.vue';
 </script>
